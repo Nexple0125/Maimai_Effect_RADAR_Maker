@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>SDVX 스타일 이펙트 레이더 입력형</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -17,14 +17,21 @@
       box-shadow: 0 0 30px rgba(0,255,255,0.1);
       border: 1px solid #333;
     }
-    #radarCanvas {
-      border-radius: 12px;
-      background-color: #1a1a1a;
-      max-width: 100%;
-      min-width: 350px;
-      min-height: 350px;
+    #canvasWrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    .text-light { color: #f0f0f0; }
+    #radarCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4/3;
+      background-color: #1a1a1a;
+      border-radius: 12px;
+      min-width: 270px;
+    }
+    .text-light { color: #f0f0f0;}
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
       -webkit-appearance: none;
@@ -37,9 +44,9 @@
 </head>
 <body class="p-4 md:p-8 flex min-h-screen items-center justify-center">
 
-  <div class="flex flex-row w-full max-w-screen-2xl gap-16 justify-between items-start">
-    <!-- 입력부 (왼쪽) -->
-    <div class="w-full max-w-md p-8 rounded-xl container-card">
+  <div class="flex flex-col md:flex-row w-full max-w-screen-2xl gap-8 md:gap-16 justify-between items-start">
+    <!-- 입력부 -->
+    <div class="w-full max-w-md p-8 rounded-xl container-card mb-8 md:mb-0">
       <h1 class="text-2xl font-bold text-light mb-2 text-center">EFFECT RADAR 입력</h1>
       <form id="inputForm" class="flex flex-col gap-3">
         <label class="flex flex-col gap-1">
@@ -86,10 +93,12 @@
         </div>
       </form>
     </div>
-    <!-- 그래프/타이틀부 (오른쪽, 넓게) -->
+    <!-- 그래프/타이틀부 + 최상위 반응형 래퍼 -->
     <div class="flex-1 flex flex-col items-center gap-2">
       <h2 id="songTitle" class="text-2xl font-bold text-light mb-4 text-center">EFFECT RADAR (氷滅の135小節)</h2>
-      <canvas id="radarCanvas" width="1200" height="900" class="mt-2"></canvas>
+      <div id="canvasWrap">
+        <canvas id="radarCanvas"></canvas>
+      </div>
       <button id="downloadBtn"
         class="mt-6 px-6 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-bold rounded shadow transition">
         그래프 저장 (PNG)
@@ -235,13 +244,34 @@
       document.getElementById('songTitle').textContent =
         "EFFECT RADAR (" + (document.getElementById('titleInput').value || "Untitled") + ")";
     }
-    document.querySelectorAll('#inputForm input').forEach(inp=>{
-      inp.addEventListener('input', updateRadar);
-    });
-    window.addEventListener('DOMContentLoaded', updateRadar);
-    window.addEventListener('resize', updateRadar);
 
-    // PNG 다운로드 기능 추가
+    function resizeCanvas() {
+      const canvas = document.getElementById('radarCanvas');
+      const wrap = document.getElementById('canvasWrap');
+      // 최대 1200, 최소 270, 부모너비 98% 기준
+      let w = Math.max(270, Math.min(wrap.offsetWidth, window.innerWidth * 0.98, 1200));
+      let h = Math.round(w * 0.75);
+      canvas.width = w;
+      canvas.height = h;
+    }
+
+    // 반응형 연결 및 redraw
+    window.addEventListener('resize', function() {
+      resizeCanvas();
+      updateRadar();
+    });
+    window.addEventListener('DOMContentLoaded', function() {
+      resizeCanvas();
+      updateRadar();
+    });
+    document.querySelectorAll('#inputForm input').forEach(inp=>{
+      inp.addEventListener('input', function() {
+        resizeCanvas();
+        updateRadar();
+      });
+    });
+
+    // PNG 다운로드
     document.getElementById('downloadBtn').addEventListener('click', function () {
       const canvas = document.getElementById('radarCanvas');
       const img = canvas.toDataURL('image/png');
